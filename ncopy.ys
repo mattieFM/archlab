@@ -36,62 +36,62 @@ ncopy:
 
 
 BigLoop1:  mrmovq (%rdi), %rcx    
-        mrmovq 8(%rdi), %r8   
+        mrmovq 0x8(%rdi), %r8   
         rmmovq %rcx, (%rsi)
         andq %rcx, %rcx         
         jle BigLoop2              
         iaddq 0x1, %rax                # inc counter     
 
-BigLoop2:  mrmovq 16(%rdi), %r9   
-        rmmovq %r8, 8(%rsi)   
+BigLoop2:  mrmovq 0x10(%rdi), %r9   
+        rmmovq %r8, 0x8(%rsi)   
         andq %r8, %r8        
         jle BigLoop3             
         iaddq 0x1, %rax                # inc counter
 
-BigLoop3:  mrmovq 24(%rdi), %r10  
-        rmmovq %r9, 16(%rsi) 
+BigLoop3:  mrmovq 0x18(%rdi), %r10  
+        rmmovq %r9, 0x10(%rsi) 
         andq %r9, %r9        
         jle BigLoop4               
         iaddq 0x1, %rax                # inc counter
 
-BigLoop4:  mrmovq 32(%rdi), %r11  
-        rmmovq %r10, 24(%rsi)  
+BigLoop4:  mrmovq 0x20(%rdi), %r11  
+        rmmovq %r10, 0x18(%rsi)  
         andq %r10, %r10      
         jle BigLoop5             
         iaddq 0x1, %rax                # inc counter
 
-BigLoop5:  mrmovq 40(%rdi), %r12  
-        rmmovq %r11, 32(%rsi)   
+BigLoop5:  mrmovq 0x28(%rdi), %r12  
+        rmmovq %r11, 0x20(%rsi)   
         andq %r11, %r11         
         jle BigLoop6              
         iaddq 0x1, %rax                # inc counter
 
-BigLoop6:  mrmovq 48(%rdi), %r13   
-        rmmovq %r12, 40(%rsi)  
+BigLoop6:  mrmovq 0x30(%rdi), %r13   
+        rmmovq %r12, 0x28(%rsi)  
         andq %r12, %r12        
         jle BigLoop7              
         iaddq 0x1, %rax                # inc counter
 
-BigLoop7:  mrmovq 56(%rdi), %r14 
-        rmmovq %r13, 48(%rsi)  
+BigLoop7:  mrmovq 0x38(%rdi), %r14 
+        rmmovq %r13, 0x30(%rsi)  
         andq %r13, %r13        
         jle BigLoop8             
         iaddq 0x1, %rax                # inc counter
 
-BigLoop8:  mrmovq 64(%rdi), %r8   
-        rmmovq %r14, 56(%rsi)   
+BigLoop8:  mrmovq 0x40(%rdi), %r8   
+        rmmovq %r14, 0x38(%rsi)   
         andq %r14, %r14        
         jle BigLoop9               
         iaddq 0x1, %rax                # inc counter
 
-BigLoop9:  mrmovq 72(%rdi), %r9   
-        rmmovq %r8, 64(%rsi)  
+BigLoop9:  mrmovq 0x48(%rdi), %r9   
+        rmmovq %r8, 0x40(%rsi)  
         andq %r8, %r8         
         jle BigLoop10            
         iaddq 0x1, %rax                # inc counter
         
 BigLoop10: 
-        rmmovq %r9, 72(%rsi)  
+        rmmovq %r9, 0x48(%rsi)  
         andq %r9, %r9       
         jle BigLoopIncrementor               
         iaddq 0x1, %rax                # inc counter
