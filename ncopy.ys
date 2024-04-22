@@ -15,8 +15,10 @@
 # values, and then start using the big loop to copy values, then
 # when there len < 8, start using the small loop to copy values.
 # - moved around calls to remove bubbles
-# - very heavily optimized small sizes, breaking them down into paths that 
-# - should be taken based on their sizes such that we can optimize them farther
+# - very heavily optimized small sizes, breaking them down into a tree to parse them
+# should be taken based on their sizes such that we can optimize them farther. 
+# By placing all the tree paths in order from high to low at the bottom we make use of
+# jump PC prediction to hopefully speed that up aswell.
 ##################################################################
 # Do not modify this portion
 # Function prologue.
@@ -29,166 +31,184 @@ ncopy:
 ##################################################################
 # You can modify this portion
         # Loop header
-        iaddq $-10,%rdx         # len < 10?
-        jl Root                 # if so, goto Root:
+        iaddq $-10,%rdx         # less than 10 total remaining
+        jl TreeRoot                 # if so, goto TreeRoot:
 
 
-Loop1:  mrmovq (%rdi), %r10     # read val from src...
-        mrmovq 8(%rdi), %r11    # read val from src...
-        rmmovq %r10, (%rsi)     # ...and store it to dst
-        andq %r10, %r10         # val <= 0?
-        jle Loop2               # if so, goto Loop2:
-        iaddq $1, %rax                # count++
-Loop2:  mrmovq 16(%rdi), %r10   # read val from src...
-        rmmovq %r11, 8(%rsi)    # ...and store it to dst
-        andq %r11, %r11         # val <= 0?
-        jle Loop3               # if so, goto Loop3:
-        iaddq $1, %rax                # count++
-Loop3:  mrmovq 24(%rdi), %r11   # read val from src...
-        rmmovq %r10, 16(%rsi)   # ...and store it to dst
-        andq %r10, %r10         # val <= 0?
-        jle Loop4               # if so, goto Loop4:
-        iaddq $1, %rax                # count++
-Loop4:  mrmovq 32(%rdi), %r10   # read val from src...
-        rmmovq %r11, 24(%rsi)   # ...and store it to dst
-        andq %r11, %r11         # val <= 0?
-        jle Loop5               # if so, goto Loop5:
-        iaddq $1, %rax                # count++
-Loop5:  mrmovq 40(%rdi), %r11   # read val from src...
-        rmmovq %r10, 32(%rsi)   # ...and store it to dst
-        andq %r10, %r10         # val <= 0?
-        jle Loop6               # if so, goto Loop6:
-        iaddq $1, %rax                # count++
-Loop6:  mrmovq 48(%rdi), %r10   # read val from src...
-        rmmovq %r11, 40(%rsi)   # ...and store it to dst
-        andq %r11, %r11         # val <= 0?
-        jle Loop7               # if so, goto Loop7:
-        iaddq $1, %rax                # count++
-Loop7:  mrmovq 56(%rdi), %r11   # read val from src...
-        rmmovq %r10, 48(%rsi)   # ...and store it to dst
-        andq %r10, %r10         # val <= 0?
-        jle Loop8               # if so, goto Loop8:
-        iaddq $1, %rax                # count++
-Loop8:  mrmovq 64(%rdi), %r10   # read val from src...
-        rmmovq %r11, 56(%rsi)   # ...and store it to dst
-        andq %r11, %r11         # val <= 0?
-        jle Loop9               # if so, goto Loop9:
-        iaddq $1, %rax                # count++
-Loop9:  mrmovq 72(%rdi), %r11   # read val from src...
-        rmmovq %r10, 64(%rsi)   # ...and store it to dst
-        andq %r10, %r10         # val <= 0?
-        jle Loop10              # if so, goto Loop10:
-        iaddq $1, %rax                # count++
-Loop10: #mrmovq 64(%rdi), %r10  # read val from src...
-        rmmovq %r11, 72(%rsi)   # ...and store it to dst
-        andq %r11, %r11         # val <= 0?
-        jle Loop                # if so, goto Loop:
-        iaddq $1, %rax                # count++
+BigLoop1:  mrmovq (%rdi), %r10    
+        mrmovq 8(%rdi), %r11   
+        rmmovq %r10, (%rsi)     
+        andq %r10, %r10         
+        jle BigLoop2              
+        iaddq $1, %rax                # inc counter     
 
-Loop:
-        iaddq $80, %rdi       # src++
-        iaddq $80, %rsi       # dst++
-        iaddq $-10,%rdx         # len >= 10?
-        jge Loop1               # if so, goto Loop1:
-Root:
-        iaddq   $7,%rdx         # len <= 3
-        jl      Left
-        jg      Right
-        je      Remain3         # len == 3 Middle
+BigLoop2:  mrmovq 16(%rdi), %r10   
+        rmmovq %r11, 8(%rsi)   
+        andq %r11, %r11        
+        jle BigLoop3             
+        iaddq $1, %rax                # inc counter
 
+BigLoop3:  mrmovq 24(%rdi), %r11  
+        rmmovq %r10, 16(%rsi) 
+        andq %r10, %r10        
+        jle BigLoop4               
+        iaddq $1, %rax                # inc counter
 
-Left:
-        iaddq   $2,%rdx         # len == 1
-        je      Remain1
-        iaddq   $-1,%rdx        # len == 2
-        je      Remain2
-        ret                     # len == 0
-Right:
-        iaddq   $-3,%rdx        # len <= 6
-        jg      RightRight
-        je      Remain6         # len == 6
-        iaddq   $1,%rdx         # RightLeft
-        je      Remain5         # len == 5
-        jmp     Remain4         # len == 4
+BigLoop4:  mrmovq 32(%rdi), %r10  
+        rmmovq %r11, 24(%rsi)  
+        andq %r11, %r11       
+        jle BigLoop5             
+        iaddq $1, %rax                # inc counter
 
-RightRight:
+BigLoop5:  mrmovq 40(%rdi), %r11  
+        rmmovq %r10, 32(%rsi)   
+        andq %r10, %r10         
+        jle BigLoop6              
+        iaddq $1, %rax                # inc counter
+
+BigLoop6:  mrmovq 48(%rdi), %r10   
+        rmmovq %r11, 40(%rsi)  
+        andq %r11, %r11        
+        jle BigLoop7              
+        iaddq $1, %rax                # inc counter
+
+BigLoop7:  mrmovq 56(%rdi), %r11 
+        rmmovq %r10, 48(%rsi)  
+        andq %r10, %r10        
+        jle BigLoop8             
+        iaddq $1, %rax                # inc counter
+
+BigLoop8:  mrmovq 64(%rdi), %r10   
+        rmmovq %r11, 56(%rsi)   
+        andq %r11, %r11        
+        jle BigLoop9               
+        iaddq $1, %rax                # inc counter
+
+BigLoop9:  mrmovq 72(%rdi), %r11   
+        rmmovq %r10, 64(%rsi)  
+        andq %r10, %r10         
+        jle BigLoop10            
+        iaddq $1, %rax                # inc counter
+        
+BigLoop10: #mrmovq 64(%rdi), %r10  
+        rmmovq %r11, 72(%rsi)  
+        andq %r11, %r11       
+        jle BigLoop               
+        iaddq $1, %rax                # inc counter
+
+BigLoop:
+        iaddq $80, %rdi       
+        iaddq $80, %rsi      
+        iaddq $-10,%rdx            # len >= 10?
+        jge BigLoop1               # jump BigLoop1:
+
+#less then 10 are left if we hit this node.
+TreeRoot:
+        iaddq   $7,%rdx         # less than 3 left?
+        jl      TreeLeft        # 7 < len, less than 7 left,
+        jg      TreeRight       # 7 > len, more than 7 left
+        je      ThreeElementsAreLeft         # 3 left exactly
+TreeLeft:
+        iaddq   $2,%rdx         # 1 left
+        je      OneElementIsLeft
+        iaddq   $-1,%rdx        # two left
+        je      TwoElementsAreLeft
+        ret                     # done
+TreeRight:
+        iaddq   $-3,%rdx        # more than six left
+        jg      TreeRightRight
+        je      SixElementsAreLeft         # 6 left
+        iaddq   $1,%rdx     
+        je      FiveElementsAreLeft         # 5 left
+        jmp     FourElementsAreLeft         # 4 left
+
+TreeRightRight:
         iaddq   $-2,%rdx
-        jl      Remain7
-        je      Remain8
+        jl      SevenElementsAreLeft
+        je      EightElementsAreLeft
 
-Remain9:
-        mrmovq 64(%rdi), %r11   # read val from src...
-        rmmovq %r11, 64(%rsi)
-        andq %r11, %r11         # val <= 0?
+#Constants are fast, and we don't want to jump much. So below 10 items it is all Constants
+#and very few jumps. 
 
-Remain8:
-        mrmovq 56(%rdi), %r11   # read val from src...
-        jle Remain82            # if so, goto Npos:
-        iaddq $1, %rax                # count++
+#fall through to nine elements if no other case triggers.
+NineElementsAreLeft:
+    mrmovq 0x40(%rdi), %r9 
+    rmmovq %r9, 0x40(%rsi)
+    andq %r9, %r9 #compare val <= 0 for EightElementsAreLeft jump case
 
-Remain82:
+EightElementsAreLeft:
+    mrmovq 0x38(%rdi), %r9 #read our data in
+    jle EightElementsAreLeft_Valid
+    iaddq $1, %rax # inc counter
 
-        rmmovq %r11, 56(%rsi)
-        andq %r11, %r11         # val <= 0?
-Remain7:
-        mrmovq 48(%rdi), %r11   # read val from src...
-        jle Remain72            # if so, goto Npos:
-        iaddq $1, %rax                # count++
-Remain72:
+EightElementsAreLeft_Valid:
+    rmmovq %r9, 0x38(%rsi)
+    andq %r9, %r9 #compare val <= 0 for SevenElementsAreLeft jump case
 
-        rmmovq %r11, 48(%rsi)
-        andq %r11, %r11         # val <= 0?
+SevenElementsAreLeft:
+        mrmovq 0x30(%rdi), %r9   
+        jle SevenElementsAreLeft_Valid           
+        iaddq $1, %rax     
 
-Remain6:
-        mrmovq 40(%rdi), %r11   # read val from src...
-        jle Remain62            # if so, goto Npos:
-        iaddq $1, %rax                # count++
-Remain62:
+SevenElementsAreLeft_Valid:    
+    rmmovq %r9, 0x30(%rsi)
+    andq %r9, %r9 #compare val <= 0 for SixElementsAreLeft jump case
 
-        rmmovq %r11, 40(%rsi)
-        andq %r11, %r11         # val <= 0?
-Remain5:
-        mrmovq 32(%rdi), %r11   # read val from src...
-        jle Remain52            # if so, goto Npos:
-        iaddq $1, %rax                # count++
-Remain52:
+SixElementsAreLeft:
+        mrmovq 0x28(%rdi), %r9
+        jle SixElementsAreLeft_Valid         
+        iaddq $1, %rax 
 
-        rmmovq %r11, 32(%rsi)
-        andq %r11, %r11         # val <= 0?
-Remain4:
-        mrmovq 24(%rdi), %r11   # read val from src...
-        jle Remain42    # if so, goto Npos:
-        iaddq $1, %rax                # count++
-Remain42:
+SixElementsAreLeft_Valid:
+        rmmovq %r9, 0x28(%rsi)
+        andq %r9, %r9 #compare val <= 0 for FiveElementsAreLeft jump case
 
-        rmmovq %r11, 24(%rsi)
-        andq %r11, %r11         # val <= 0?
-Remain3:
-        mrmovq 16(%rdi), %r11   # read val from src...
-        jle Remain32            # if so, goto Npos:
-        iaddq $1, %rax                # count++
-Remain32:
+FiveElementsAreLeft:
+        mrmovq 0x20(%rdi), %r9
+        jle FiveElementsAreLeft_Valid            
+        iaddq $1, %rax           
 
-        rmmovq %r11, 16(%rsi)
-        andq %r11, %r11         # val <= 0?
-Remain2:
-        mrmovq 8(%rdi), %r11    # read val from src...
-        jle Remain22            # if so, goto Npos:
-        iaddq $1, %rax                # count++
-Remain22:
+FiveElementsAreLeft_Valid:
+        rmmovq %r9, 0x20(%rsi)
+        andq %r9, %r9 #compare val <= 0 for FourElementsAreLeft jump case
 
-        rmmovq %r11, 8(%rsi)
-        andq %r11, %r11         # val <= 0?
-Remain1:
-        mrmovq (%rdi), %r11     # read val from src...
-        jle Remain12            # if so, goto Npos:
-        iaddq $1, %rax                # count++
-Remain12:
+FourElementsAreLeft:
+        mrmovq 0x18(%rdi), %r9  
+        jle FourElementsAreLeft_Valid    
+        iaddq $1, %rax           
 
-        rmmovq %r11, (%rsi)
-        andq %r11, %r11         # val <= 0?
-        jle Done                # if so, goto Npos:
-        iaddq $1, %rax                # count++
+FourElementsAreLeft_Valid:
+        rmmovq %r9, 0x18(%rsi)
+        andq %r9, %r9  #compare val <= 0 for ThreeElementsAreLeft jump case
+
+ThreeElementsAreLeft:
+        mrmovq 0x10(%rdi), %r9
+        jle ThreeElementsAreLeft_Valid         
+        iaddq $1, %rax              
+
+ThreeElementsAreLeft_Valid:
+        rmmovq %r9, 0x10(%rsi)
+        andq %r9, %r9 #compare val <= 0 for TwoElementsAreLeft jump case
+
+TwoElementsAreLeft:
+        mrmovq 0x8(%rdi), %r9
+        jle TwoElementsAreLeft_Valid        
+        iaddq $1, %rax        
+
+TwoElementsAreLeft_Valid:
+        rmmovq %r9, 0x8(%rsi)
+        andq %r9, %r9 #compare val <= 0 for OneElementsAreLeft jump case
+
+OneElementIsLeft:
+        mrmovq (%rdi), %r9
+        jle OneElementIsLeft_Valid          
+        iaddq $1, %rax         
+
+OneElementIsLeft_Valid:
+        rmmovq %r9, (%rsi)
+        andq %r9, %r9  #compare val <= 0 for done jump case.
+        jle Done               
+        iaddq $1, %rax               
 
 ##################################################################
 # Do not modify the following section of code

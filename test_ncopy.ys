@@ -1,0 +1,93 @@
+##################################################################
+# ncopy.ys - Copy a src block of len ints to dst.
+# Return the number of positive ints (>0) contained in src.
+#
+# Include your name and ID here.
+#
+# Describe how and why you modified the baseline code.
+#
+##################################################################
+# Do not modify this portion
+# Function prologue.
+ncopy: pushl %ebp  # Save old frame pointer
+ rrmovl %esp,%ebp # Set up new frame pointer
+ pushl %esi  # Save callee-save regs
+ pushl %ebx
+ pushl %edi
+ mrmovl 8(%ebp),%ebx # src
+ mrmovl 16(%ebp),%edx # len
+ mrmovl 12(%ebp),%ecx # dst
+
+##################################################################
+# You can modify this portion
+# Loop header
+ xorl %eax,%eax  # count = 0;
+ iaddl $-4 , %edx      # len = len - 4
+ andl %edx,%edx  # len <= 0?
+ jle Remain      # if so, goto Done:
+
+# loop unrolling 
+Loop:  
+ mrmovl (%ebx),%esi      # read val from src
+ mrmovl 4(%ebx), %edi    # read val from src
+ rmmovl %esi, (%ecx) # ...and store it to dst
+ andl %esi, %esi
+ jle Nop1
+ iaddl  $1, %eax         # count = count + 1
+Nop1:
+ rmmovl %edi, 4(%ecx) # ...and store it to dst
+ andl %edi, %edi
+ jle Nop2
+ iaddl  $1, %eax         # count = count + 1
+Nop2:
+ iaddl  $-4, %edx        # len = len - 4
+ mrmovl 8(%ebx),%esi      # read val from src
+ mrmovl 12(%ebx), %edi    # read val from src
+ rmmovl %esi, 8(%ecx) # ...and store it to dst
+ andl %esi, %esi
+ jle Nop3
+ iaddl  $1, %eax         # count = count + 1
+Nop3:
+ rmmovl %edi, 12(%ecx) # ...and store it to dst
+ andl %edi, %edi
+ jle Nop4
+ iaddl  $1, %eax         # count = count + 1
+Nop4:
+ iaddl  $16, %ebx
+ iaddl  $16, %ecx
+ andl   %edx,%edx        # len > 0 ? 
+ jg Loop   # if so, goto Loop:
+
+################left element######################################
+Remain:
+ iaddl  $4, %edx
+ andl  %edx,%edx
+ jle   Done
+Nxloop:
+ mrmovl (%ebx),%esi      # read val from src
+ iaddl $4,%ebx
+ iaddl $-1,%edx
+ rmmovl %esi, (%ecx) # ...and store it to dst
+ iaddl $4,%ecx
+ andl %esi, %esi
+ jle Nop5
+ iaddl  $1, %eax         # count = count + 1
+Nop5: 
+ andl  %edx,%edx
+ jg Nxloop
+ 
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+ popl %edi               # Restore callee-save registers
+ popl %ebx
+ popl %esi
+ rrmovl %ebp, %esp
+ popl %ebp
+ ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+EndFun:
+# /* $end ncopy-ys */

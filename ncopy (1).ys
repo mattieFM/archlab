@@ -1,0 +1,117 @@
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len words to dst.
+# Return the number of positive words (>0) contained in src.
+#
+# Ryan Montgomery - rmontgo2
+#
+# Describe how and why you modified the baseline code.
+# - Replaced irmovq + addq instructions with iaddq instructions
+# - Utilized loop unrolling.  Calculations indicated that copying
+# values in blocks of 8 would be most efficient, which is why this
+# many values are copied at a time in the big loop.  The way the
+# program works is to basically check that there are at least 8
+# values, and then start using the big loop to copy values, then
+# when there len < 8, start using the small loop to copy values.
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = len
+ncopy:
+
+##################################################################
+
+# %rdi = src, %rsi = dst, %rdx = len
+# You can modify this portion
+        # Loop header
+        xorq %rax,%rax          # count = 0;
+        andq %rdx,%rdx          # len <= 0?
+        jle Done                # if so, goto Done:
+
+BigCheck:
+        rrmovq %rdx, %rbx
+        iaddq -8, %rbx          # Check if the block is big enough to use loop unrolling
+        jl SmallLoop
+BigLoop:			# Per big loop, get 8 memory blocks and put them in registers
+        mrmovq (%rdi), %rcx		
+        mrmovq 0x8(%rdi), %r8
+        mrmovq 0x10(%rdi), %r9
+        mrmovq 0x18(%rdi), %r10
+        mrmovq 0x20(%rdi), %r11
+        mrmovq 0x28(%rdi), %r12
+        mrmovq 0x30(%rdi), %r13
+        mrmovq 0x38(%rdi), %r14
+        rmmovq %rcx, (%rsi)	# Put the register values into the dest memory locations
+        rmmovq %r8, 0x8(%rsi)
+        rmmovq %r9, 0x10(%rsi)
+        rmmovq %r10, 0x18(%rsi)
+        rmmovq %r11, 0x20(%rsi)
+        rmmovq %r12, 0x28(%rsi)
+        rmmovq %r13, 0x30(%rsi)
+        rmmovq %r14, 0x38(%rsi)
+C1:				# 1st check for positive integer
+        andq %rcx, %rcx
+        jle C2
+        iaddq $1, %rax		# If positive integer, count++
+C2:				# 2nd check for positive integer
+        andq %r8, %r8
+        jle C3
+        iaddq $1, %rax		# If positive integer, count++
+C3:				# 3rd check for positive integer
+        andq %r9, %r9
+        jle C4
+        iaddq $1, %rax		# If positive integer, count++
+C4:				# 4th check for positive integer
+        andq %r10, %r10
+        jle C5
+        iaddq $1, %rax		# If positive integer, count++
+C5:				# 5th check for positive integer
+        andq %r11, %r11
+        jle C6
+        iaddq $1, %rax		# If positive integer, count++
+C6:				# 6th check for positive integer
+        andq %r12, %r12
+        jle C7
+        iaddq $1, %rax		# If positive integer, count++
+C7:				# 7th check for positive integer
+        andq %r13, %r13
+        jle C8
+        iaddq $1, %rax		# If positive integer, count++
+C8:				# 8th check for positive integer
+        andq %r14, %r14
+        jle BigInc
+        iaddq $1, %rax		# If positive integer, count++
+BigInc:
+        iaddq 0x40, %rdi	# src += 64
+        iaddq 0x40, %rsi	# dst += 64
+        iaddq $-8, %rdx  # len -= 8
+SmallCheck:
+        iaddq $-8, %rbx		# Check that there are at least 8 elements left
+        jg BigLoop
+        
+	andq %rdx, %rdx		# Check if there are elements left
+        jle Done                # If there are no elements left, go to Done
+SmallLoop:   
+        mrmovq (%rdi), %r10     # Read val from src
+        rmmovq %r10, (%rsi)     # Store val to dst
+        andq %r10, %r10         # Is val positive?
+        jle Inc                 # If not, go to Inc (skipping count):
+        iaddq $1, %rax          # count++
+Inc:   
+        iaddq $-1, %rdx         # len--
+        iaddq $8, %rdi          # src++
+        iaddq $8, %rsi          # dst++
+        andq %rdx,%rdx          # check if len > 0
+        jg SmallLoop            # if so, goto SmallLoop:
+
+
+
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */
