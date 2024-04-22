@@ -35,70 +35,70 @@ ncopy:
         jl TreeRoot                 # if so, goto TreeRoot:
 
 
-BigLoop1:  mrmovq (%rdi), %r10    
-        mrmovq 8(%rdi), %r11   
-        rmmovq %r10, (%rsi)     
-        andq %r10, %r10         
+BigLoop1:  mrmovq (%rdi), %rcx    
+        mrmovq 8(%rdi), %r8   
+        rmmovq %rcx, (%rsi)
+        andq %rcx, %rcx         
         jle BigLoop2              
-        iaddq $1, %rax                # inc counter     
+        iaddq 0x1, %rax                # inc counter     
 
-BigLoop2:  mrmovq 16(%rdi), %r10   
-        rmmovq %r11, 8(%rsi)   
-        andq %r11, %r11        
+BigLoop2:  mrmovq 16(%rdi), %r9   
+        rmmovq %r8, 8(%rsi)   
+        andq %r8, %r8        
         jle BigLoop3             
-        iaddq $1, %rax                # inc counter
+        iaddq 0x1, %rax                # inc counter
 
-BigLoop3:  mrmovq 24(%rdi), %r11  
-        rmmovq %r10, 16(%rsi) 
-        andq %r10, %r10        
+BigLoop3:  mrmovq 24(%rdi), %r10  
+        rmmovq %r9, 16(%rsi) 
+        andq %r9, %r9        
         jle BigLoop4               
-        iaddq $1, %rax                # inc counter
+        iaddq 0x1, %rax                # inc counter
 
-BigLoop4:  mrmovq 32(%rdi), %r10  
-        rmmovq %r11, 24(%rsi)  
-        andq %r11, %r11       
+BigLoop4:  mrmovq 32(%rdi), %r11  
+        rmmovq %r10, 24(%rsi)  
+        andq %r10, %r10      
         jle BigLoop5             
-        iaddq $1, %rax                # inc counter
+        iaddq 0x1, %rax                # inc counter
 
-BigLoop5:  mrmovq 40(%rdi), %r11  
-        rmmovq %r10, 32(%rsi)   
-        andq %r10, %r10         
+BigLoop5:  mrmovq 40(%rdi), %r12  
+        rmmovq %r11, 32(%rsi)   
+        andq %r11, %r11         
         jle BigLoop6              
-        iaddq $1, %rax                # inc counter
+        iaddq 0x1, %rax                # inc counter
 
-BigLoop6:  mrmovq 48(%rdi), %r10   
-        rmmovq %r11, 40(%rsi)  
-        andq %r11, %r11        
+BigLoop6:  mrmovq 48(%rdi), %r13   
+        rmmovq %r12, 40(%rsi)  
+        andq %r12, %r12        
         jle BigLoop7              
-        iaddq $1, %rax                # inc counter
+        iaddq 0x1, %rax                # inc counter
 
-BigLoop7:  mrmovq 56(%rdi), %r11 
-        rmmovq %r10, 48(%rsi)  
-        andq %r10, %r10        
+BigLoop7:  mrmovq 56(%rdi), %r14 
+        rmmovq %r13, 48(%rsi)  
+        andq %r13, %r13        
         jle BigLoop8             
-        iaddq $1, %rax                # inc counter
+        iaddq 0x1, %rax                # inc counter
 
-BigLoop8:  mrmovq 64(%rdi), %r10   
-        rmmovq %r11, 56(%rsi)   
-        andq %r11, %r11        
+BigLoop8:  mrmovq 64(%rdi), %r8   
+        rmmovq %r14, 56(%rsi)   
+        andq %r14, %r14        
         jle BigLoop9               
-        iaddq $1, %rax                # inc counter
+        iaddq 0x1, %rax                # inc counter
 
-BigLoop9:  mrmovq 72(%rdi), %r11   
-        rmmovq %r10, 64(%rsi)  
-        andq %r10, %r10         
+BigLoop9:  mrmovq 72(%rdi), %r9   
+        rmmovq %r8, 64(%rsi)  
+        andq %r8, %r8         
         jle BigLoop10            
-        iaddq $1, %rax                # inc counter
+        iaddq 0x1, %rax                # inc counter
         
-BigLoop10: #mrmovq 64(%rdi), %r10  
-        rmmovq %r11, 72(%rsi)  
-        andq %r11, %r11       
-        jle BigLoop               
-        iaddq $1, %rax                # inc counter
+BigLoop10: 
+        rmmovq %r9, 72(%rsi)  
+        andq %r9, %r9       
+        jle BigLoopIncrementor               
+        iaddq 0x1, %rax                # inc counter
 
-BigLoop:
-        iaddq $80, %rdi       
-        iaddq $80, %rsi      
+BigLoopIncrementor:
+        iaddq $80, %rsi 
+        iaddq $80, %rdi        
         iaddq $-10,%rdx            # len >= 10?
         jge BigLoop1               # jump BigLoop1:
 
@@ -118,7 +118,7 @@ TreeRight:
         iaddq   $-3,%rdx        # more than six left
         jg      TreeRightRight
         je      SixElementsAreLeft         # 6 left
-        iaddq   $1,%rdx     
+        iaddq   0x1,%rdx     
         je      FiveElementsAreLeft         # 5 left
         jmp     FourElementsAreLeft         # 4 left
 
@@ -139,7 +139,7 @@ NineElementsAreLeft:
 EightElementsAreLeft:
     mrmovq 0x38(%rdi), %r9 #read our data in
     jle EightElementsAreLeft_Valid
-    iaddq $1, %rax # inc counter
+    iaddq 0x1, %rax # inc counter
 
 EightElementsAreLeft_Valid:
     rmmovq %r9, 0x38(%rsi)
@@ -148,7 +148,7 @@ EightElementsAreLeft_Valid:
 SevenElementsAreLeft:
         mrmovq 0x30(%rdi), %r9   
         jle SevenElementsAreLeft_Valid           
-        iaddq $1, %rax     
+        iaddq 0x1, %rax     
 
 SevenElementsAreLeft_Valid:    
     rmmovq %r9, 0x30(%rsi)
@@ -157,7 +157,7 @@ SevenElementsAreLeft_Valid:
 SixElementsAreLeft:
         mrmovq 0x28(%rdi), %r9
         jle SixElementsAreLeft_Valid         
-        iaddq $1, %rax 
+        iaddq 0x1, %rax 
 
 SixElementsAreLeft_Valid:
         rmmovq %r9, 0x28(%rsi)
@@ -166,7 +166,7 @@ SixElementsAreLeft_Valid:
 FiveElementsAreLeft:
         mrmovq 0x20(%rdi), %r9
         jle FiveElementsAreLeft_Valid            
-        iaddq $1, %rax           
+        iaddq 0x1, %rax           
 
 FiveElementsAreLeft_Valid:
         rmmovq %r9, 0x20(%rsi)
@@ -175,7 +175,7 @@ FiveElementsAreLeft_Valid:
 FourElementsAreLeft:
         mrmovq 0x18(%rdi), %r9  
         jle FourElementsAreLeft_Valid    
-        iaddq $1, %rax           
+        iaddq 0x1, %rax           
 
 FourElementsAreLeft_Valid:
         rmmovq %r9, 0x18(%rsi)
@@ -184,7 +184,7 @@ FourElementsAreLeft_Valid:
 ThreeElementsAreLeft:
         mrmovq 0x10(%rdi), %r9
         jle ThreeElementsAreLeft_Valid         
-        iaddq $1, %rax              
+        iaddq 0x1, %rax              
 
 ThreeElementsAreLeft_Valid:
         rmmovq %r9, 0x10(%rsi)
@@ -193,7 +193,7 @@ ThreeElementsAreLeft_Valid:
 TwoElementsAreLeft:
         mrmovq 0x8(%rdi), %r9
         jle TwoElementsAreLeft_Valid        
-        iaddq $1, %rax        
+        iaddq 0x1, %rax        
 
 TwoElementsAreLeft_Valid:
         rmmovq %r9, 0x8(%rsi)
@@ -202,13 +202,13 @@ TwoElementsAreLeft_Valid:
 OneElementIsLeft:
         mrmovq (%rdi), %r9
         jle OneElementIsLeft_Valid          
-        iaddq $1, %rax         
+        iaddq 0x1, %rax         
 
 OneElementIsLeft_Valid:
         rmmovq %r9, (%rsi)
         andq %r9, %r9  #compare val <= 0 for done jump case.
         jle Done               
-        iaddq $1, %rax               
+        iaddq 0x1, %rax               
 
 ##################################################################
 # Do not modify the following section of code
